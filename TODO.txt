@@ -1,0 +1,9 @@
+- split research.py back into activelearning.py, training.py, fedavg.py, chainaggr.py, eval.py
+
+- figure out why git does not like the pickle files
+	Binary blobs give errors??? 
+
+- remove kitti/runs from gitignore and check if all files are in git
+	Dont forget paper pdf
+
+- merge test.py with eval.py

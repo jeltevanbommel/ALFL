@@ -1,0 +1,79 @@
+# Hyperparameters for VOC finetuning
+# python train.py --batch 64 --weights yolov5m.pt --data voc.yaml --img 512 --epochs 50
+# See tutorials for hyperparameter evolution https://github.com/ultralytics/yolov5#tutorials
+
+
+# Hyperparameter Evolution Results
+# Generations: 306
+#                   P         R     mAP.5 mAP.5:.95       box       obj       cls
+# Metrics:        0.6     0.936     0.896     0.684    0.0115   0.00805   0.00146
+
+#lr0: 0.002
+#lrf: 0.12
+#momentum: 0.1
+#weight_decay: 0.000
+#warmup_epochs: 4.0
+#warmup_momentum: 0.5
+#warmup_bias_lr: 0.05
+#box: 0.05  # box loss gain
+#cls: 0.5  # cls loss gain
+#cls_pw: 1.0  # cls BCELoss positive_weight
+#obj: 1.0  # obj loss gain (scale with pixels)
+#obj_pw: 1.0  # obj BCELoss positive_weight
+#iou_t: 0.20  # IoU training threshold
+#anchor_t: 5.0  # anchor-multiple threshold
+## anchors: 3.63
+#fl_gamma: 0.0  # focal loss gamma (efficientDet default gamma=1.5)
+#hsv_h: 0.015  # image HSV-Hue augmentation (fraction)
+#hsv_s: 0.7  # image HSV-Saturation augmentation (fraction)
+#hsv_v: 0.4  # image HSV-Value augmentation (fraction)
+#degrees: 0.0  # image rotation (+/- deg)
+#translate: 0.1  # image translation (+/- fraction)
+#scale: 0.5  # image scale (+/- gain)
+#shear: 0.0  # image shear (+/- deg)
+#perspective: 0.0  # image perspective (+/- fraction), range 0-0.001
+#flipud: 0.0  # image flip up-down (probability)
+#fliplr: 0.5  # image flip left-right (probability)
+#mosaic: 1.0  # image mosaic (probability)
+#mixup: 0.0  # image mixup (probability)
+# Hyperparameters for VOC finetuning
+# python train.py --batch 64 --weights yolov5m.pt --data voc.yaml --img 512 --epochs 50
+# See tutorials for hyperparameter evolution https://github.com/ultralytics/yolov5#tutorials
+
+
+# Hyperparameter Evolution Results
+# Generations: 306
+#                   P         R     mAP.5 mAP.5:.95       box       obj       cls
+# Metrics:        0.6     0.936     0.896     0.684    0.0115   0.00805   0.00146
+
+# Hyperparameter Evolution Results
+# Generations: 300
+# Metrics:       0.73     0.539     0.597     0.312    0.0424    0.0521   0.00979
+
+lr0: 0.0135
+lrf: 0.17
+momentum: 0.908
+weight_decay: 0.00056
+warmup_epochs: 3.57
+warmup_momentum: 0.619
+warmup_bias_lr: 0.111
+box: 0.0509
+cls: 0.378
+cls_pw: 1.28
+obj: 0.615
+obj_pw: 1.23
+iou_t: 0.2
+anchor_t: 5.42
+fl_gamma: 0.0
+hsv_h: 0.00867
+hsv_s: 0.568
+hsv_v: 0.322
+degrees: 0.0
+translate: 0.0701
+scale: 0.417
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.5
+mosaic: 0.926
+mixup: 0.0
