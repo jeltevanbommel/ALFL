@@ -6,6 +6,3 @@
 
 - remove kitti/runs from gitignore and check if all files are in git
 	Dont forget paper pdf
-
-- merge test.py with eval.py
-    pickle files out of test.test, then use that for aggchain
