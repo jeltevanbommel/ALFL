@@ -1,3 +1,4 @@
+
 - split research.py back into activelearning.py, training.py, fedavg.py, chainaggr.py, eval.py
 
 - figure out why git does not like the pickle files
@@ -7,3 +8,4 @@
 	Dont forget paper pdf
 
 - merge test.py with eval.py
+    pickle files out of test.test, then use that for aggchain

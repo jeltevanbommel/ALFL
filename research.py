@@ -1,5 +1,6 @@
 import argparse
 import os
+import pickle
 import random
 import sys
 import time
@@ -14,6 +15,7 @@ from torch import optim
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
+import evaluate
 import test
 from models.experimental import attempt_load
 from models.yolo import Model, nn, np, amp
@@ -33,6 +35,8 @@ DEVICES = 9
 # CLASSES = 2
 AL_CONF_THRESHOLD = 0.25
 AL_IOU_THRESHOLD = 0.45
+
+
 # BASE_OPTIONS = {
 #         'classes': CLASSES,
 #         'epochs': 20,
@@ -71,7 +75,8 @@ AL_IOU_THRESHOLD = 0.45
 
 
 def start_training(options):
-    if not ((path.exists(options.weights) or options.pretrain) and path.exists(options.model) and path.exists(options.hyp)):
+    if not ((path.exists(options.weights) or options.pretrain) and path.exists(options.model) and path.exists(
+            options.hyp)):
         print(
             f"Missing files. Existing are: weights: {path.exists(options.weights)}, model: {path.exists(options.model)}, hyperparameters: {path.exists(options.hyp)}")
         return
@@ -88,11 +93,13 @@ def start_training(options):
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
 
     # create needed directories
-    save_dir = Path(str(increment_path(Path('runs/') / f'run-{options.name}-{options.client}-{options.round}', exist_ok=False)))
+    save_dir = Path(
+        str(increment_path(Path('runs/') / f'run-{options.name}-{options.client}-{options.round}', exist_ok=False)))
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
+    best_pickle = wdir / 'best.pickle'
     results_file = save_dir / 'results.txt'
 
     # Save run settings
@@ -307,16 +314,14 @@ def start_training(options):
         # mAP
         ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
         final_epoch = epoch + 1 == epochs
-        if options.test or (options.test_final and final_epoch):  # or final_epoch:  # Calculate mAP #todo
-            results, maps, times, _ = test.test({'train': train_path, 'val': test_path, 'nc': nc, 'names': names},
-                                                batch_size=options.batch_size * 2,
-                                                imgsz=imgsz_test,
-                                                model=ema.ema,
-                                                dataloader=testloader,
-                                                save_dir=save_dir,
-                                                verbose=nc < 50 and final_epoch,
-                                                plots=False,
-                                                compute_loss=compute_loss)
+        if options.test or (options.test_final and final_epoch):   # Calculate mAP
+            results, maps, times, pickledump = evaluate.evaluate(None,
+                                                                 model=ema.ema,
+                                                                 dataloader=testloader,
+                                                                 save_dir=save_dir,
+                                                                 nc=nc,
+                                                                 compute_loss=compute_loss,
+                                                                 plots=False)
 
         # Write
         with open(results_file, 'a') as f:
@@ -342,6 +347,8 @@ def start_training(options):
             torch.save(ckpt, last)
             if best_fitness == fi:
                 torch.save(ckpt, best)
+                with open(best_pickle, 'wb') as handle:
+                    pickle.dump(pickledump, handle, protocol=pickle.HIGHEST_PROTOCOL)
             del ckpt
 
         # end epoch ----------------------------------------------------------------------------------------------------
@@ -560,6 +567,38 @@ def pseudo_fed_avg(clients_and_sizes, iteration, options):  # [[0, weightsfile, 
     torch.save(new_model, f"./pseudo_fl/fed-{options.name}-{iteration}.pt")
 
 
+def aggchain(opt):
+    results = {}
+    for client in range(DEVICES):
+        pickle_file = f'runs/run-{opt.name}-{client}-{opt.round}/weights/best.pickle'
+        # pickle_file = f'evals/run-{opt.name}-{client}-{opt.round}.pickle'
+        with open(pickle_file, 'rb') as f:
+            result = pickle.load(f)
+            results[client] = dict()
+            for clsname, seen, nt, p, r, ap50, ap in result['res_per_class']:
+                results[client][
+                    clsname] = ap50 if opt.aggr_metric == "ap50" else r if opt.aggr_metric == "r" else ap
+    # get the best devices according to the metric
+    runs = [0 for _ in range(DEVICES)]
+    weights = 1 / opt.classes  # 1/classes
+    for cls in results[0]:
+        best = max([(i, results[i][cls]) for i in range(DEVICES)], key=lambda k: k[1])[0]
+        runs[best] += weights
+    # and aggregate them into one model
+    all_state_dict = [get_state_dict(opt.model, 3, opt.classes, f"runs/run-{opt.name}-{i}-{opt.round}/weights/best.pt")
+                      for i in range(DEVICES)]
+    base_model = runs.index(max(runs))
+    print(f"Aggregating with weights: {[(client, weight) for client, weight in enumerate(runs)]}")
+    fname = f'runs/run-{opt.name}-{base_model}-{opt.round}/weights/best.pt'
+    model = torch.load(fname, map_location=torch.device('cpu'))
+    state_dict = model['model'].float().state_dict()
+    for key, value in state_dict.items():
+        state_dict[key] = sum(weight * all_state_dict[client][key] for client, weight in enumerate(runs))
+
+    model['model'].load_state_dict(state_dict)
+    torch.save(model, f"pseudo_fl/{opt.name}agg.pt")
+
+
 def init(options):
     if not os.path.exists(options.clients_dir):
         os.makedirs(options.clients_dir)
@@ -572,13 +611,6 @@ def init(options):
             with open(options.clients_dir + "ul-{}.txt".format(client), "w") as f2:
                 for line in f.readlines():
                     f2.write(line)
-#         with open('./data/run-{}-{}.yaml'.format(options.name, client), "w") as f:  # todo
-#             if CLASSES == 2:
-#                 f.write(
-#                     f"train: {options.clients_dir}/l-{client}.txt\nval: {options.yolo_dir}val.txt\nnc: 2\nnames: ['car', 'pedestrian']")
-#             elif CLASSES == 8:
-#                 f.write(
-#                     f"train: {options.clients_dir}/l-{client}.txt\nval: {options.yolo_dir}val.txt\nnc: 8\nnames: ['car', 'cyclist', 'misc', 'pedestrian', 'person_sitting', 'tram', 'truck','van']")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -590,13 +622,15 @@ if __name__ == '__main__':
                         help='amount of epochs that will be trained when action is train')
     parser.add_argument('--al_samples', type=int, default=10,
                         help='amount of samples that will be selected in AL when action is al')
-    parser.add_argument('--reuse_weights',action='store_true', help='use the weights from last fedavg iteration for a new training iteration. WARNING: Overwrites weights argument.')
+    parser.add_argument('--reuse_weights', action='store_true',
+                        help='use the weights from last fedavg iteration for a new training iteration. WARNING: Overwrites weights argument.')
     parser.add_argument('--al_method', type=str, default='sum',
                         help='active learning aggregation method for samples when action is al')
     parser.add_argument('--save_dir', type=str, default='runs/test', help='')
-    parser.add_argument('--batch_size', type=int, default=2, help='')
+    parser.add_argument('--batch_size', type=int, default=16, help='')
     parser.add_argument('--weights', type=str, default='', help='')
     parser.add_argument('--img_size', type=int, default=640, help='')
+    parser.add_argument('--aggr_metric', type=str, default='r', help='aggregation metric, only used in chained aggregation first round.')
     parser.add_argument('--device', type=str, default='', help='')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--test', action='store_true', help='')
@@ -612,7 +646,7 @@ if __name__ == '__main__':
     opt = parser.parse_args(sys.argv[1:])
     opt.yolo_dir = f'KITTI/yolo{opt.classes}/'
     opt.clients_dir = f'KITTI/yolo{opt.classes}/clients/run-{opt.name}/'
-    opt.single_cls = False # needed to reuse their dataloader ...
+    opt.single_cls = False  # needed to reuse their dataloader ...
     if opt.reuse_weights:
         opt.weights = f"./pseudo_fl/fed-{opt.name}-{opt.round - 1}.pt"
     if opt.action == 'al':
@@ -623,5 +657,7 @@ if __name__ == '__main__':
         fed_set = [(client, f'./runs/run-{opt.name}-{client}-{opt.round}/weights/best.pt', (opt.round + 1) * 10)
                    for client in range(DEVICES)]
         pseudo_fed_avg(fed_set, opt.round, opt)
+    elif opt.action == "aggchain":
+        aggchain(opt)
     elif opt.action == "init":
         init(opt)
