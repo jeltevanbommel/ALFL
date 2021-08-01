@@ -28,6 +28,7 @@
 storage.googleapis.com
 evals/*
 KITTI/yolo2/clients/*
+!KITTI/yolo2/clients/defaults
 KITTI/yolo2/train/*
 KITTI/yolo2/val/*
 !KITTI/yolo2/clients/*.txt

@@ -314,6 +314,7 @@ def start_training(options):
         # mAP
         ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
         final_epoch = epoch + 1 == epochs
+        pickledump = None
         if options.test or (options.test_final and final_epoch):   # Calculate mAP
             results, maps, times, pickledump = evaluate.evaluate(None,
                                                                  model=ema.ema,
@@ -420,7 +421,7 @@ def al_sample(samples, result, method):
 def al_get_confidences(weights_file, files):
     with torch.no_grad():
         imgsz = 640
-        device = select_device('')
+        device = select_device('') # TODO different device based on options.
         half = device.type != 'cpu'
         model = attempt_load(weights=weights_file, map_location=device)
         model.half()
