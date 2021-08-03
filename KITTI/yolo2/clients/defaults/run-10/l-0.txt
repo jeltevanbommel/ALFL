@@ -1,3 +1,13 @@
+./KITTI/yolo2/train/images/005663.jpg
+./KITTI/yolo2/train/images/005682.jpg
+./KITTI/yolo2/train/images/002129.jpg
+./KITTI/yolo2/train/images/004704.jpg
+./KITTI/yolo2/train/images/003472.jpg
+./KITTI/yolo2/train/images/003973.jpg
+./KITTI/yolo2/train/images/000432.jpg
+./KITTI/yolo2/train/images/003812.jpg
+./KITTI/yolo2/train/images/001837.jpg
+./KITTI/yolo2/train/images/004234.jpg
 ./KITTI/yolo2/train/images/002979.jpg
 ./KITTI/yolo2/train/images/003064.jpg
 ./KITTI/yolo2/train/images/001822.jpg
@@ -208,13 +218,3 @@
 ./KITTI/yolo2/train/images/005361.jpg
 ./KITTI/yolo2/train/images/004055.jpg
 ./KITTI/yolo2/train/images/006296.jpg
-./KITTI/yolo2/train/images/002649.jpg
-./KITTI/yolo2/train/images/002613.jpg
-./KITTI/yolo2/train/images/003336.jpg
-./KITTI/yolo2/train/images/004581.jpg
-./KITTI/yolo2/train/images/004653.jpg
-./KITTI/yolo2/train/images/003426.jpg
-./KITTI/yolo2/train/images/004625.jpg
-./KITTI/yolo2/train/images/005395.jpg
-./KITTI/yolo2/train/images/005347.jpg
-./KITTI/yolo2/train/images/002161.jpg
