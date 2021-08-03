@@ -78,7 +78,7 @@ def start_training(options):
     if not ((path.exists(options.weights) or options.pretrain) and path.exists(options.model) and path.exists(
             options.hyp)):
         print(
-            f"Missing files. Existing are: weights: {path.exists(options.weights)}, model: {path.exists(options.model)}, hyperparameters: {path.exists(options.hyp)}")
+            f"Missing files. Existing are: weights: {options.weights}{path.exists(options.weights)}, model: {path.exists(options.model)}, hyperparameters: {path.exists(options.hyp)}")
         return
     # select device for training
     device = select_device(options.device, batch_size=options.batch_size)
@@ -565,7 +565,7 @@ def pseudo_fed_avg(clients_and_sizes, iteration, options):  # [[0, weightsfile, 
         state_dict[key] = sum(values_for_key)
 
     new_model['model'].load_state_dict(state_dict)
-    torch.save(new_model, f"./pseudo_fl/fed-{options.name}-{iteration}.pt")
+    torch.save(new_model, f"pseudo_fl/fed-{options.name}-{iteration}.pt")
 
 
 def aggchain(opt):
@@ -649,13 +649,13 @@ if __name__ == '__main__':
     opt.clients_dir = f'KITTI/yolo{opt.classes}/clients/run-{opt.name}/'
     opt.single_cls = False  # needed to reuse their dataloader ...
     if opt.reuse_weights:
-        opt.weights = f"./pseudo_fl/fed-{opt.name}-{opt.round - 1}.pt"
+        opt.weights = f"pseudo_fl/fed-{opt.name}-{opt.round - 1}.pt"
     if opt.action == 'al':
         al_step(opt.client, opt.weights, opt)
     elif opt.action == 'train':
         start_training(opt)
     elif opt.action == "fedavg":
-        fed_set = [(client, f'./runs/run-{opt.name}-{client}-{opt.round}/weights/best.pt', (opt.round + 1) * 10)
+        fed_set = [(client, f'runs/run-{opt.name}-{client}-{opt.round}/weights/best.pt', (opt.round + 1) * 10)
                    for client in range(DEVICES)]
         pseudo_fed_avg(fed_set, opt.round, opt)
     elif opt.action == "aggchain":

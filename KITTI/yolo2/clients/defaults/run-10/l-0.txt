@@ -1,13 +1,3 @@
-./KITTI/yolo2/train/images/005663.jpg
-./KITTI/yolo2/train/images/005682.jpg
-./KITTI/yolo2/train/images/002129.jpg
-./KITTI/yolo2/train/images/004704.jpg
-./KITTI/yolo2/train/images/003472.jpg
-./KITTI/yolo2/train/images/003973.jpg
-./KITTI/yolo2/train/images/000432.jpg
-./KITTI/yolo2/train/images/003812.jpg
-./KITTI/yolo2/train/images/001837.jpg
-./KITTI/yolo2/train/images/004234.jpg
 ./KITTI/yolo2/train/images/002979.jpg
 ./KITTI/yolo2/train/images/003064.jpg
 ./KITTI/yolo2/train/images/001822.jpg
