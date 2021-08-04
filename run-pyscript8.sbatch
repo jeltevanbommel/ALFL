@@ -35,9 +35,9 @@ for currround in {111..200}
 do 
   for client in {0..8}
   do
-   python3 research.py --action train --epochs 20 --reuse_weights --client "$client" --classes 8 --round "$currround" --name "$1"
+   python3 research2.py --action train --epochs 20 --reuse_weights --client "$client" --classes 8 --round "$currround" --name 16
   done
-  python3 research.py --action fedavg --classes 8 --round "$currround" --name "$1"
+  python3 research2.py --action fedavg --classes 8 --round "$currround" --name 16
 done
 
 # jupyter notebook --no-browser --ip=$NODE.ewi.utwente.nl --port=$PORT
